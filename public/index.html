@@ -35,7 +35,7 @@
 <div id="rides"></div>
 
 <script>
-// ✅ IMPORTANT: works everywhere (Render + local)
+
 const API = "";
 
 // =====================
@@ -49,6 +49,8 @@ function loadDrivers() {
         <div class="card">
           <b>${d.driverName}</b> (${d.vehicle}) - ${d.status}
           <br>ID: ${d.id}
+          <br>
+          <button onclick="deleteDriver(${d.id})">Delete</button>
         </div>
       `).join("");
     });
@@ -72,21 +74,34 @@ function addDriver() {
     body: JSON.stringify({ driverName: name, vehicle })
   })
   .then(res => {
-    if (!res.ok) throw new Error("Failed to add driver");
+    if (!res.ok) throw new Error("Failed");
     return res.json();
   })
   .then(() => {
     alert("Driver added!");
     loadDrivers();
-
-    // clear inputs
-    document.getElementById("name").value = "";
-    document.getElementById("vehicle").value = "";
   })
-  .catch(err => {
-    console.error(err);
-    alert("Error adding driver");
-  });
+  .catch(() => alert("Error adding driver"));
+}
+
+// =====================
+// DELETE DRIVER (NEW)
+// =====================
+function deleteDriver(id) {
+  if (!confirm("Delete this driver?")) return;
+
+  fetch(`${API}/drivers/${id}`, {
+    method: "DELETE"
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed");
+    return res.json();
+  })
+  .then(() => {
+    alert("Driver deleted!");
+    loadDrivers();
+  })
+  .catch(() => alert("Error deleting driver"));
 }
 
 // =====================
@@ -125,13 +140,14 @@ function loadRides() {
         data.length === 0
           ? "No rides yet"
           : data.map(r => `
-            <div class="card">
-              Ride #${r.id} - ${r.status}
-              <br>Driver ID: ${r.driverId}
-            </div>
-          `).join("");
+              <div class="card">
+                Ride #${r.id} - ${r.status}
+                <br>Driver ID: ${r.driverId}
+              </div>
+            `).join("");
     });
 }
+
 </script>
 
 </body>
