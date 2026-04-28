@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MOVE IT</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Move it</h1>
+
+<div class="container">
+
+  <!-- USERS -->
+  <div class="section">
+    <h2> Users</h2>
+
+    <input id="uname" placeholder="Name">
+    <input id="uemail" placeholder="Email">
+    <input id="upass" placeholder="Password">
+
+    <button onclick="addUser()">Add</button>
+    <button onclick="loadUsers()">Load</button>
+
+    <div id="users"></div>
+  </div>
+
+  <!-- RIDERS -->
+  <div class="section">
+    <h2> Riders</h2>
+
+    <input id="rname" placeholder="Name">
+    <input id="motor" placeholder="Motorcycle">
+    <input id="plate" placeholder="Plate Number">
+
+    <button onclick="addRider()">Add</button>
+    <button onclick="loadRiders()">Load</button>
+
+    <div id="riders"></div>
+  </div>
+
+  <!-- RIDES -->
+  <div class="section">
+    <h2> Rides</h2>
+
+    <input id="uid" placeholder="User ID">
+    <input id="pick" placeholder="Pickup">
+    <input id="drop" placeholder="Dropoff">
+
+    <button onclick="bookRide()">Book</button>
+    <button onclick="loadRides()">Load</button>
+
+    <div id="rides"></div>
+  </div>
+
+</div>
+
+<script>
+const API = "https://lope2132.onrender.com/api";
+
+/* ================= USERS ================= */
+async function addUser() {
+  await fetch(API + "/users/register", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name: uname.value,
+      email: uemail.value,
+      password: upass.value
+    })
+  });
+  loadUsers();
+}
+
+async function loadUsers() {
+  const res = await fetch(API + "/users");
+  const data = await res.json();
+  users.innerHTML = "";
+
+  data.forEach(u => {
+    users.innerHTML += `
+      <div class="card">
+        <b>${u.name}</b><br>
+        ${u.email}<br>
+        <button onclick="deleteUser(${u.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+async function deleteUser(id) {
+  await fetch(API + "/users/" + id, { method: "DELETE" });
+  loadUsers();
+}
+
+/* ================= RIDERS ================= */
+async function addRider() {
+  await fetch(API + "/riders/register", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name: rname.value,
+      motorcycle: motor.value,
+      plateNumber: plate.value
+    })
+  });
+  loadRiders();
+}
+
+async function loadRiders() {
+  const res = await fetch(API + "/riders");
+  const data = await res.json();
+  riders.innerHTML = "";
+
+  data.forEach(r => {
+    riders.innerHTML += `
+      <div class="card">
+        <b>${r.name}</b><br>
+        ${r.motorcycle}<br>
+        Plate: ${r.plateNumber}<br>
+        <button onclick="deleteRider(${r.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+async function deleteRider(id) {
+  await fetch(API + "/riders/" + id, { method: "DELETE" });
+  loadRiders();
+}
+
+/* ================= RIDES ================= */
+async function bookRide() {
+  await fetch(API + "/rides/book", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      userId: Number(uid.value),
+      pickupLocation: pick.value,
+      dropoffLocation: drop.value
+    })
+  });
+  loadRides();
+}
+
+async function loadRides() {
+  const res = await fetch(API + "/rides");
+  const data = await res.json();
+  rides.innerHTML = "";
+
+  data.forEach(r => {
+    rides.innerHTML += `
+      <div class="card ${r.status.replace('-', '')}">
+        <b>Ride ${r.id}</b><br>
+        User: ${r.userId}<br>
+        From: ${r.pickupLocation}<br>
+        To: ${r.dropoffLocation}<br>
+        Status: ${r.status}<br>
+
+        <button onclick="completeRide(${r.id})">Complete</button>
+        <button onclick="cancelRide(${r.id})">Cancel</button>
+        <button onclick="deleteRide(${r.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+async function completeRide(id) {
+  await fetch(API + "/rides/" + id + "/complete", { method: "PUT" });
+  loadRides();
+}
+
+async function cancelRide(id) {
+  await fetch(API + "/rides/" + id + "/cancel", { method: "PUT" });
+  loadRides();
+}
+
+async function deleteRide(id) {
+  await fetch(API + "/rides/" + id, { method: "DELETE" });
+  loadRides();
+}
+</script>
+
+</body>
+
+
+html nako
+</html>
