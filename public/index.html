@@ -5,8 +5,7 @@
   <style>
     body { font-family: Arial; padding: 20px; background: #f4f4f4; }
     .card { background: white; padding: 10px; margin: 10px 0; border-radius: 5px; }
-    button { margin: 5px; padding: 5px 10px; }
-    input { margin: 5px; padding: 5px; display: block; }
+    input, button { margin: 5px; padding: 5px; }
   </style>
 </head>
 <body>
@@ -23,7 +22,7 @@
 <input id="vehicle" placeholder="Vehicle">
 <button onclick="addDriver()">Add</button>
 
-<!-- BOOK RIDE -->
+<!-- RIDES -->
 <h3>Book Ride</h3>
 <input id="rider" placeholder="Rider Name">
 <input id="pickup" placeholder="Pickup">
@@ -31,13 +30,12 @@
 <input id="driverId" placeholder="Driver ID">
 <button onclick="bookRide()">Book</button>
 
-<!-- RIDES -->
 <h3>Rides</h3>
 <button onclick="loadRides()">Load Rides</button>
 <div id="rides"></div>
 
 <script>
-// ✅ IMPORTANT: works locally AND on Render
+// ✅ IMPORTANT: works everywhere (Render + local)
 const API = "";
 
 // =====================
@@ -53,8 +51,7 @@ function loadDrivers() {
           <br>ID: ${d.id}
         </div>
       `).join("");
-    })
-    .catch(() => alert("Error loading drivers"));
+    });
 }
 
 // =====================
@@ -74,12 +71,22 @@ function addDriver() {
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ driverName: name, vehicle })
   })
-  .then(res => res.json())
-  .then(() => {
-    alert("Driver added");
-    loadDrivers();
+  .then(res => {
+    if (!res.ok) throw new Error("Failed to add driver");
+    return res.json();
   })
-  .catch(() => alert("Error adding driver"));
+  .then(() => {
+    alert("Driver added!");
+    loadDrivers();
+
+    // clear inputs
+    document.getElementById("name").value = "";
+    document.getElementById("vehicle").value = "";
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Error adding driver");
+  });
 }
 
 // =====================
@@ -91,25 +98,20 @@ function bookRide() {
   const dropoff = document.getElementById("dropoff").value;
   const driverId = parseInt(document.getElementById("driverId").value);
 
-  if (!rider || !pickup || !dropoff || !driverId) {
-    alert("Fill all fields correctly");
-    return;
-  }
-
   fetch(`${API}/rides`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ riderName: rider, pickup, dropoff, driverId })
   })
   .then(res => {
-      if (!res.ok) throw new Error("Booking failed");
-      return res.json();
+    if (!res.ok) throw new Error("Booking failed");
+    return res.json();
   })
   .then(() => {
     alert("Ride booked!");
     loadRides();
   })
-  .catch(() => alert("Driver not available or invalid ID"));
+  .catch(() => alert("Driver not available"));
 }
 
 // =====================
@@ -119,34 +121,16 @@ function loadRides() {
   fetch(`${API}/rides`)
     .then(res => res.json())
     .then(data => {
-      if (data.length === 0) {
-        document.getElementById("rides").innerHTML = "No rides yet";
-        return;
-      }
-
-      document.getElementById("rides").innerHTML = data.map(r => `
-        <div class="card">
-          Ride #${r.id} - ${r.status}
-          <br>Driver ID: ${r.driverId}
-          <br>
-          <button onclick="updateRide(${r.id}, 'completed')">Complete</button>
-          <button onclick="updateRide(${r.id}, 'cancelled')">Cancel</button>
-        </div>
-      `).join("");
-    })
-    .catch(() => alert("Error loading rides"));
-}
-
-// =====================
-// UPDATE RIDE
-// =====================
-function updateRide(id, status) {
-  fetch(`${API}/rides/${id}`, {
-    method: "PUT",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ status })
-  })
-  .then(() => loadRides());
+      document.getElementById("rides").innerHTML =
+        data.length === 0
+          ? "No rides yet"
+          : data.map(r => `
+            <div class="card">
+              Ride #${r.id} - ${r.status}
+              <br>Driver ID: ${r.driverId}
+            </div>
+          `).join("");
+    });
 }
 </script>
 
