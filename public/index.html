@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maxim Ride Viewer</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    .card { background: white; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    button { margin: 5px; padding: 5px 10px; }
+    input { margin: 5px; padding: 5px; }
+  </style>
+</head>
+<body>
+
+<h1>🚕 Maxim Ride Viewer</h1>
+
+<button onclick="loadDrivers()">Load Drivers</button>
+<div id="drivers"></div>
+
+<h3>Add Driver</h3>
+<input id="name" placeholder="Name">
+<input id="vehicle" placeholder="Vehicle">
+<button onclick="addDriver()">Add</button>
+
+<h3>Book Ride</h3>
+<input id="rider" placeholder="Rider">
+<input id="pickup" placeholder="Pickup">
+<input id="dropoff" placeholder="Dropoff">
+<input id="driverId" placeholder="Driver ID">
+<button onclick="bookRide()">Book</button>
+
+<h3>Rides</h3>
+<button onclick="loadRides()">Load Rides</button>
+<div id="rides"></div>
+
+<script>
+const API = "http://localhost:3000";
+
+// =====================
+// LOAD DRIVERS
+// =====================
+function loadDrivers() {
+  fetch(`${API}/drivers`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("drivers").innerHTML = data.map(d => `
+        <div class="card">
+          <b>${d.driverName}</b> (${d.vehicle}) - ${d.status}
+          <br>
+          ID: ${d.id}
+          <br>
+          <button onclick="deleteDriver(${d.id})">Delete</button>
+        </div>
+      `).join("");
+    })
+    .catch(err => alert("Error loading drivers"));
+}
+
+// =====================
+// ADD DRIVER
+// =====================
+function addDriver() {
+  const name = document.getElementById("name").value;
+  const vehicle = document.getElementById("vehicle").value;
+
+  fetch(`${API}/drivers`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ driverName: name, vehicle })
+  })
+  .then(() => {
+    loadDrivers();
+    document.getElementById("name").value = "";
+    document.getElementById("vehicle").value = "";
+  });
+}
+
+// =====================
+// DELETE DRIVER
+// =====================
+function deleteDriver(id) {
+  fetch(`${API}/drivers/${id}`, { method: "DELETE" })
+    .then(() => loadDrivers());
+}
+
+// =====================
+// BOOK RIDE
+// =====================
+function bookRide() {
+  const rider = document.getElementById("rider").value;
+  const pickup = document.getElementById("pickup").value;
+  const dropoff = document.getElementById("dropoff").value;
+  const driverId = parseInt(document.getElementById("driverId").value);
+
+  fetch(`${API}/rides`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ riderName: rider, pickup, dropoff, driverId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("Ride booked!");
+    loadRides();
+
+    // clear inputs
+    document.getElementById("rider").value = "";
+    document.getElementById("pickup").value = "";
+    document.getElementById("dropoff").value = "";
+    document.getElementById("driverId").value = "";
+  })
+  .catch(() => alert("Booking failed"));
+}
+
+// =====================
+// LOAD RIDES
+// =====================
+function loadRides() {
+  fetch(`${API}/rides`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("rides").innerHTML = data.map(r => `
+        <div class="card">
+          Ride #${r.id} - ${r.status}
+          <br>
+          Driver ID: ${r.driverId}
+          <br>
+          <button onclick="updateRide(${r.id}, 'completed')">Complete</button>
+          <button onclick="updateRide(${r.id}, 'cancelled')">Cancel</button>
+        </div>
+      `).join("");
+    });
+}
+
+// =====================
+// UPDATE RIDE STATUS
+// =====================
+function updateRide(id, status) {
+  fetch(`${API}/rides/${id}`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ status })
+  })
+  .then(() => loadRides());
+}
+</script>
+
+</body>
+</html>
